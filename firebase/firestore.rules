@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // A person is "staff" only if you created a document for their email in the `staff` collection.
+    // (Anyone on the internet can try to create a Firebase login, so a login alone is NOT enough.)
+    function isStaff() {
+      return request.auth != null && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/staff/$(request.auth.token.email));
+    }
+    function role() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.token.email)).data.role;
+    }
+    function isClinician() { return isStaff() && role() in ['admin', 'clinician']; }
+    function isAdmin()     { return isStaff() && role() == 'admin'; }
+
+    match /staff/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if false;                      // managed only in the Firebase console
+    }
+
+    // Clinical records: no names, no phone numbers.
+    match /participants/{pid} {
+      allow read, create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Private linkage register (name + phone). Collectors can add a contact, only clinicians/admins can read it.
+    match /contacts/{pid} {
+      allow create: if isStaff();
+      allow read, update: if isClinician();
+      allow delete: if isAdmin();
+    }
+  }
+}

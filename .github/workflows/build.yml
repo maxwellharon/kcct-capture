@@ -1,0 +1,61 @@
+name: Build KCCT Capture
+
+# Run it from the "Actions" tab → "Build KCCT Capture" → "Run workflow".
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  apk:
+    name: Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Wrap the web app as an Android project (Capacitor)
+        run: |
+          mkdir build && cd build
+          npm init -y
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          mkdir www && cp -r ../app/. www/
+          echo '{"appId":"org.kcct.capture","appName":"KCCT Capture","webDir":"www","android":{"allowMixedContent":false}}' > capacitor.config.json
+          npx cap add android
+          npx cap sync android
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do cp ../android-icons/mipmap-$d/*.png android/app/src/main/res/mipmap-$d/; done
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+      - name: Build the APK
+        working-directory: build/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KCCT-Capture-APK
+          path: build/android/app/build/outputs/apk/debug/app-debug.apk
+
+  pages:
+    name: Web app link (installable from Chrome)
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app
+      - id: deploy
+        uses: actions/deploy-pages@v4
