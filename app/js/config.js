@@ -5,13 +5,12 @@
 // ─────────────────────────────────────────────────────────────
 export const CONFIG = {
   firebase: {
-    apiKey: "AIzaSyBEZgGMJJVdwtlqtkw-TNLiDgP4Ep6SslE",
-    authDomain: "kcct-capture-cb6d2.firebaseapp.com",
-    databaseURL: "https://kcct-capture-cb6d2-default-rtdb.firebaseio.com",
-    projectId: "kcct-capture-cb6d2",
-    storageBucket: "kcct-capture-cb6d2.firebasestorage.app",
-    messagingSenderId: "1071191089482",
-    appId: "1:1071191089482:web:a1cf068d42c5df77bc61b3"
+    apiKey: 'PASTE_API_KEY',
+    authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
+    projectId: 'PASTE_PROJECT_ID',
+    storageBucket: 'PASTE_PROJECT_ID.firebasestorage.app',
+    messagingSenderId: 'PASTE_SENDER_ID',
+    appId: 'PASTE_APP_ID',
   },
 
   // Speed targets for the intake form (seconds)
@@ -24,4 +23,3 @@ export const CONFIG = {
   HISTOLOGY_TAT_DAYS: 14,       // histology expected back within…
   FOLLOWUP_DUE_DAYS: 42,        // positives are "due" for follow-up after…
 };
-

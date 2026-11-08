@@ -178,9 +178,9 @@ function insights(R, A, { valid, pos }) {
   if (valid.length >= 30) {
     const factors = [
       ['HIV-positive', p => I(p).hiv_status === 'Positive'], ['Aged 40 or over', p => I(p).age >= 40], ['Aged under 30', p => I(p).age < 30],
-      ['Never screened before', p => I(p).prev_screen === 'No'], ['4 or more lifetime partners', p => I(p).partners === '4 or more'],
-      ['First sex before 16', p => typeof I(p).sexual_debut === 'number' && I(p).sexual_debut < 16], ['Five or more pregnancies', p => I(p).gravida === '5+'],
-      ['Past TB treatment', p => I(p).tb && !['Never', 'Unsure'].includes(I(p).tb)], ['Tobacco use', p => arr(I(p).substances).includes('Tobacco / smoking')],
+      ['Never screened before', p => I(p).prev_screen === 'No'], ['4 or more lifetime partners', p => ['4–10', '11–15', 'More than 15'].includes(I(p).partners)],
+      ['First sex before 18', p => ['Under 15', '15–17'].includes(I(p).sexual_debut)], ['Five or more pregnancies', p => I(p).gravida === '5 or more'],
+      ['Past TB treatment', p => I(p).tb && !['Never treated', 'Not sure'].includes(I(p).tb)], ['Tobacco use', p => arr(I(p).substances).includes('Tobacco / smoking')],
       ['Has symptoms', p => arr(I(p).symptoms).some(x => x !== 'None')], ['No personal income', p => I(p).income === 'No income'],
       ['Travels over an hour to a facility', p => ['1–2 hours', 'Over 2 hours'].includes(I(p).travel_time)],
     ];

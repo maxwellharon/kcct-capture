@@ -7,6 +7,8 @@ export const isAnswered = (f, d) => {
   const v = d[f.id];
   return v != null && v !== '' && !(Array.isArray(v) && !v.length);
 };
+const ov = o => (o && typeof o === 'object' ? o.v : o);
+const ol = o => (o && typeof o === 'object' ? o.l : o);
 const stickyKey = (ns, id) => `kcct.sticky.${ns}.${id}`;
 const PHONE_OK = v => /^(\+?254|0)[17]\d{8}$/.test(v.replace(/[\s-]/g, ''));
 
@@ -60,22 +62,22 @@ export function mountForm(root, opts) {
     const warn = h('p', { class: 'hint warn', hidden: true });
     switch (f.type) {
       case 'chips': {
-        const btns = f.opts.map(o => h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: () => commit(f.id, o) }, o));
+        const btns = f.opts.map(o => h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: () => commit(f.id, ov(o)) }, ol(o)));
         put(pad, h('div', { class: 'chips' + (f.opts.length <= 3 ? ' row' : '') }, btns), hintEl(f), warn, h('div', { class: 'q-foot' }, skipBtn(f)));
-        api.sync = () => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(d[f.id] === f.opts[i])));
+        api.sync = () => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(d[f.id] === ov(f.opts[i]))));
         break;
       }
       case 'multi': {
         const ex = f.exclusive || [];
-        const btns = f.opts.map(o => h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: () => {
+        const btns = f.opts.map(o0 => { const o = ov(o0); return h('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', onclick: () => {
           let cur = Array.isArray(d[f.id]) ? [...d[f.id]] : [];
           if (cur.includes(o)) cur = cur.filter(x => x !== o);
           else if (ex.includes(o)) { commit(f.id, [o]); return; }
           else cur = [...cur.filter(x => !ex.includes(x)), o];
           live(f.id, cur.length ? cur : null);
-        } }, o));
+        } }, ol(o0)); });
         put(pad, h('div', { class: 'chips' }, btns), hintEl(f), h('div', { class: 'q-foot' }, skipBtn(f), nextBtn(f)));
-        api.sync = () => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(Array.isArray(d[f.id]) && d[f.id].includes(f.opts[i]))));
+        api.sync = () => btns.forEach((b, i) => b.setAttribute('aria-pressed', String(Array.isArray(d[f.id]) && d[f.id].includes(ov(f.opts[i])))));
         break;
       }
       case 'num': {

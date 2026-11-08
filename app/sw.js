@@ -1,5 +1,5 @@
 // Offline shell. Bump VERSION whenever you change any app file so phones pick up the update.
-const VERSION = 'kcct-capture-v1';
+const VERSION = 'kcct-capture-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/app.css', 'js/main.js', 'js/config.js', 'js/util.js', 'js/db.js', 'js/schema.js', 'js/form.js', 'js/pid.js', 'js/analytics.js', 'js/charts.js', 'js/demo.js',
   'assets/logo-mark.svg', 'assets/logo-horizontal.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

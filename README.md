@@ -1,1 +1,0 @@
-# kcct-capture

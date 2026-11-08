@@ -22,15 +22,15 @@ export function makeDemo(count = 170) {
     const site = pick(SITES);
     const age = Math.round(Math.min(64, Math.max(24, 25 + (r() + r() + r()) / 3 * 36)));
     const hiv = wpick(['Positive', 'Negative', 'Unknown', 'Declined'], [14, 76, 7, 3]);
-    const debut = chance(0.06) ? 'Declined' : Math.round(14 + r() * 7);
-    const partners = wpick(['1', '2–3', '4 or more', 'Declined'], [38, 40, 15, 7]);
+    const debut = wpick(['Under 15', '15–17', '18–20', '21–24', '25 or older', 'Prefer not to say'], [6, 30, 36, 16, 6, 6]);
+    const partners = wpick(['1–3', '4–10', '11–15', 'More than 15', 'Prefer not to say'], [50, 32, 8, 3, 7]);
     const prev = chance(0.66) ? 'No' : 'Yes';
     const emp = wpick(['Formal employment', 'Self-employed / business', 'Casual / informal work', 'Student', 'Home-maker', 'Unemployed, seeking work', 'Unemployed, not seeking', 'Retired', 'Declined'], [9, 28, 22, 2, 18, 9, 6, 3, 3]);
     const works = ['Formal employment', 'Self-employed / business', 'Casual / informal work'].includes(emp);
     const income = works ? wpick(['Under 5,000', '5,000–14,999', '15,000–29,999', '30,000–59,999', '60,000+'], [28, 34, 22, 11, 5]) : wpick(['No income', 'Under 5,000', 'Declined'], [70, 20, 10]);
     const h = Math.round(150 + r() * 25), w = Math.round(48 + r() * 42);
     const b = bmi(h, w);
-    const gravida = wpick(['0', '1', '2', '3', '4', '5+'], [4, 12, 22, 26, 20, 16]);
+    const gravida = wpick(['0', '1', '2', '3', '4', '5 or more'], [4, 12, 22, 26, 20, 16]);
     const symptoms = chance(0.15) ? [pick(['Bleeding after sex', 'Abnormal discharge', 'Pelvic pain', 'Bleeding between periods'])] : ['None'];
     const key = site.code + date; seqs[key] = (seqs[key] || 0) + 1;
     const base = `KCT-${site.code}-${date.slice(2).replace(/-/g, '')}-D${String(seqs[key]).padStart(2, '0')}`;
@@ -39,21 +39,22 @@ export function makeDemo(count = 170) {
     const intake = {
       consent_care: 'Yes', privacy_explained: 'Explained', consent_research: 'Not sought', age, height_cm: h, weight_kg: w, bmi: b, bmi_cat: bmiCat(b),
       marital: wpick(['Single', 'Married / cohabiting', 'Separated / divorced', 'Widowed'], [18, 58, 14, 10]), education: wpick(['None', 'Primary', 'Secondary', 'Tertiary'], [12, 38, 34, 16]),
-      county: site.county, emp_status: emp, income, insurance: wpick(['SHA', 'Private', 'None'], [45, 5, 50]),
+      county: site.county, emp_status: emp, income, insurance: wpick(['SHA', 'Private insurer', 'SHA and private insurer', 'None'], [45, 4, 2, 49]),
       sexual_debut: debut, gravida, pregnant: chance(0.03) ? 'Yes' : 'No', partners,
-      hiv_status: hiv, tb: wpick(['Never', 'Under 1 year ago', '1–5 years ago', 'Over 5 years ago'], [90, 2, 5, 3]),
+      hiv_status: hiv, tb: wpick(['Never treated', 'Treated, finished under 1 year ago', 'Treated, finished 1–5 years ago', 'Treated, finished over 5 years ago'], [90, 2, 5, 3]),
       chronic_meds: hiv === 'Positive' ? ['ARVs'] : ['None'], substances: [wpick(['None', 'Tobacco / smoking', 'Alcohol'], [86, 4, 10])],
-      hpv_vax: wpick(['None', '2 or more doses', 'Unknown'], [88, 3, 9]), fam_hx: wpick(['No', 'Yes', 'Unknown'], [80, 6, 14]), symptoms,
+      hpv_vax: wpick(['No', 'Yes', 'Not sure'], [88, 3, 9]), fam_hx: wpick(['No', 'Yes', 'Unknown'], [80, 6, 14]), symptoms,
       prev_screen: prev, prev_treat: 'None', travel_time: wpick(['Under 30 min', '30–60 min', '1–2 hours', 'Over 2 hours'], [28, 34, 26, 12]),
       travel_cost: wpick(['0', 'Under 200', '200–500', 'Over 500'], [30, 35, 25, 10]), heard_via: wpick(['CHV / community talk', 'Church or chief’s baraza', 'Radio', 'Social media', 'Friend or family', 'Health facility'], [38, 20, 12, 8, 14, 8]),
       followup_mode: wpick(['Phone call', 'SMS', 'WhatsApp', 'Home visit / CHV'], [50, 20, 15, 15]),
       fill_seconds: Math.max(22, Math.round((105 - Math.max(0, 40 - ago) * 1.1) * (0.55 + r() * 0.75))), completeness: 88 + Math.round(r() * 12),
     };
     if (age >= 40) intake.menopausal = age > 52 && chance(0.7) ? 'Yes' : 'No';
-    if (gravida !== '0') intake.parity = gravida;
+    if (gravida !== '0') intake.children = gravida === '5 or more' ? '5' : gravida;
+    if (intake.hpv_vax === 'Yes') { intake.hpv_vax_type = 'Gardasil (4-valent)'; intake.hpv_doses = '2 doses'; }
     if (hiv === 'Positive') { intake.hiv_on_art = chance(0.92) ? 'Yes' : 'No'; if (intake.hiv_on_art === 'Yes') { intake.hiv_art_duration = pick(['6–12 months', '1–5 years', 'Over 5 years']); intake.hiv_vl = wpick(['Suppressed', 'Not suppressed', 'Unknown'], [75, 12, 13]); } }
     else if (hiv !== 'Declined') intake.hiv_last_test = pick(['Under 3 months ago', '3–12 months ago', 'Over 12 months ago', 'Never tested']);
-    if (prev === 'Yes') { intake.prev_type = [pick(['VIA / VILI', 'Pap smear', 'HPV DNA'])]; intake.prev_when = pick(['Under 1 year', '1–3 years', '3–5 years', 'Over 5 years']); intake.prev_result = pick(['Normal', 'Normal', 'Not told / unknown']); }
+    if (prev === 'Yes') { intake.prev_type = [pick(['VIA / VILI (visual check)', 'Pap smear', 'HPV DNA test'])]; intake.prev_when = pick(['Less than 2 years ago', '2 years ago', 'More than 2 years ago']); intake.prev_wait = pick(['Same day', '1–7 days', '1–4 weeks']); intake.prev_how = [pick(['In person at the facility', 'Phone call', 'SMS'])]; intake.prev_result = pick(['Normal', 'Normal', 'Not told / not sure']); }
     else intake.prev_reason = [wpick(['Did not know about it', 'Cost', 'Distance / transport', 'Fear or embarrassment', 'No symptoms', 'No time', 'Service not available'], [38, 12, 16, 14, 12, 5, 3])];
     if (works) intake.emp_sector = pick(['Farming / livestock', 'Trade / market / shop', 'Hospitality / domestic', 'Health / education', 'Transport']);
 
@@ -61,7 +62,7 @@ export function makeDemo(count = 170) {
 
     // ---- cascade ----
     if (ago >= 0 && !(ago === 0 && chance(0.25))) {
-      const pPos = Math.min(0.5, 0.075 * (hiv === 'Positive' ? 2.6 : 1) * (age >= 40 ? 1.4 : 1) * (partners === '4 or more' ? 1.5 : 1) * (prev === 'No' ? 1.25 : 1) * (symptoms[0] !== 'None' ? 1.6 : 1));
+      const pPos = Math.min(0.5, 0.075 * (hiv === 'Positive' ? 2.6 : 1) * (age >= 40 ? 1.4 : 1) * (['4–10', '11–15', 'More than 15'].includes(partners) ? 1.5 : 1) * (prev === 'No' ? 1.25 : 1) * (symptoms[0] !== 'None' ? 1.6 : 1));
       const inv = chance(site.code === 'DMC' ? 0.14 : 0.035);
       let result = inv ? 'Invalid' : chance(pPos) ? 'Positive' : 'Negative';
       const t0 = start + 10 * 6e4, t1 = t0 + (18 + r() * 14) * 6e4;

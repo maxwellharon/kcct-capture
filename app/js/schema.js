@@ -13,6 +13,10 @@ const is = (d, id, ...v) => v.includes(d[id]);
 const has = (d, id, v) => Array.isArray(d[id]) && d[id].includes(v);
 const none = 'None';
 
+// Insurers named in the IRA register (2019 list, brands updated) plus the main medical-cover providers.
+// Not exhaustive: names change through mergers, so check against the current IRA register and edit this list.
+const INSURERS = ['Not known', 'AAR Insurance', 'Africa Merchant Assurance (AMACO)', 'APA Insurance', 'Britam', 'CIC Insurance', 'Corporate Insurance', 'Directline Assurance', 'Fidelity Shield', 'First Assurance', 'GA Insurance', 'Geminia Insurance', 'The Heritage Insurance', 'ICEA LION', 'Intra Africa Assurance', 'Invesco Assurance', 'Jubilee Health Insurance', 'Kenindia Assurance', 'Kenya Orient Insurance', 'Liberty Life Assurance', 'Madison Insurance', 'Mayfair Insurance', 'The Monarch Insurance', 'MUA Insurance', 'Occidental Insurance', 'Old Mutual / UAP', 'Pacis Insurance', 'Pioneer Assurance', 'Resolution Insurance', 'Sanlam Kenya', 'Takaful Insurance of Africa', 'Tausi Assurance', 'Trident Insurance', 'Xplico Insurance', 'Other insurer'];
+
 // ───────────────────────────── INTAKE (the 1-minute form) ─────────────────────────────
 export const INTAKE = [
   // Consent -------------------------------------------------------------
@@ -43,48 +47,76 @@ export const INTAKE = [
   { id: 'income', group: 'Work and income', label: 'Her own monthly income (KES)', type: 'chips',
     opts: ['No income', 'Under 5,000', '5,000–14,999', '15,000–29,999', '30,000–59,999', '60,000+', 'Declined'],
     show: d => !is(d, 'emp_status', 'Declined') },
-  { id: 'insurance', group: 'Work and income', label: 'Health insurance', type: 'chips', opts: ['SHA', 'Private', 'None', 'Other'] },
+  { id: 'insurance', group: 'Work and income', label: 'Health insurance cover', type: 'chips',
+    opts: ['SHA', 'Private insurer', 'SHA and private insurer', 'None'] },
+  { id: 'insurer', group: 'Work and income', label: 'Which insurance company?', type: 'select', opts: INSURERS,
+    show: d => is(d, 'insurance', 'Private insurer', 'SHA and private insurer') },
+  { id: 'insurer_other', group: 'Work and income', label: 'Name of the insurance company', type: 'text', placeholder: 'Company name',
+    show: d => is(d, 'insurer', 'Other insurer') },
 
-  // Reproductive health -------------------------------------------------
-  { id: 'sexual_debut', group: 'Reproductive health', label: 'Age at first sex', type: 'num', unit: 'years', min: 8, max: 45, alts: ['Never had sex', 'Declined'],
-    warn: (v, d) => (typeof v === 'number' && d.age && v > d.age ? 'Later than her current age. Please check.' : null) },
-  { id: 'gravida', group: 'Reproductive health', label: 'Pregnancies so far', type: 'chips', opts: ['0', '1', '2', '3', '4', '5+'] },
-  { id: 'parity', group: 'Reproductive health', label: 'Births so far', type: 'chips', opts: ['0', '1', '2', '3', '4', '5+'],
+  // Reproductive and sexual health -------------------------------------
+  { id: 'sexual_debut', group: 'Reproductive and sexual health', label: 'Age at first sex', type: 'chips',
+    opts: ['Under 15', '15–17', '18–20', '21–24', '25 or older', 'Never had sex', 'Do not remember', 'Prefer not to say'] },
+  { id: 'gravida', group: 'Reproductive and sexual health', label: 'How many pregnancies has she had?', type: 'chips', opts: ['0', '1', '2', '3', '4', '5 or more'],
+    hint: 'Count every pregnancy, including any that ended in loss.' },
+  { id: 'children', group: 'Reproductive and sexual health', label: 'How many children does she have?', type: 'chips', opts: ['0', '1', '2', '3', '4', '5', '6 or more'],
     show: d => d.gravida && d.gravida !== '0' },
-  { id: 'menopausal', group: 'Reproductive health', label: 'Reached menopause?', type: 'chips', opts: YN, show: d => d.age >= 40 },
-  { id: 'pregnant', group: 'Reproductive health', label: 'Pregnant now?', type: 'chips', opts: ['Yes', 'No', 'Unsure'], req: true, show: d => !is(d, 'menopausal', 'Yes') },
-  { id: 'gest_weeks', group: 'Reproductive health', label: 'Weeks pregnant', type: 'num', unit: 'weeks', min: 1, max: 42, show: d => is(d, 'pregnant', 'Yes') },
-  { id: 'breastfeeding', group: 'Reproductive health', label: 'Breastfeeding?', type: 'chips', opts: YN, show: d => !is(d, 'menopausal', 'Yes') },
-  { id: 'contraception', group: 'Reproductive health', label: 'Family planning in use', type: 'multi', exclusive: [none],
-    opts: [none, 'Pill', 'Injectable', 'Implant', 'IUD', 'Condoms', 'Permanent method', 'Other'], show: d => !is(d, 'menopausal', 'Yes') && !is(d, 'sexual_debut', 'Never had sex') },
-  { id: 'partners', group: 'Reproductive health', label: 'Lifetime sexual partners', type: 'chips', opts: ['1', '2–3', '4 or more', 'Declined'], show: d => !is(d, 'sexual_debut', 'Never had sex') },
+  { id: 'menopausal', group: 'Reproductive and sexual health', label: 'Has she reached menopause?', type: 'chips', opts: YN, show: d => d.age >= 40 },
+  { id: 'pregnant', group: 'Reproductive and sexual health', label: 'Is she pregnant now?', type: 'chips', opts: ['Yes', 'No', 'Not sure'], req: true, show: d => !is(d, 'menopausal', 'Yes') },
+  { id: 'gest_weeks', group: 'Reproductive and sexual health', label: 'How many weeks pregnant?', type: 'num', unit: 'weeks', min: 1, max: 42, show: d => is(d, 'pregnant', 'Yes') },
+  { id: 'breastfeeding', group: 'Reproductive and sexual health', label: 'Is she breastfeeding a baby now?', type: 'chips', opts: ['Yes', 'No'], show: d => !is(d, 'menopausal', 'Yes') },
+  { id: 'fp_previous', group: 'Reproductive and sexual health', label: 'Family planning methods used in the past', type: 'multi', exclusive: ['Never used one'],
+    opts: ['Never used one', 'Pill', 'Injectable', 'Implant', 'IUD (coil)', 'Condoms', 'Natural / calendar method', 'Emergency pill', 'Permanent method', 'Other'],
+    show: d => !is(d, 'menopausal', 'Yes') && !is(d, 'sexual_debut', 'Never had sex') },
+  { id: 'fp_current', group: 'Reproductive and sexual health', label: 'Family planning method she uses now', type: 'multi', exclusive: ['None now'],
+    opts: ['None now', 'Pill', 'Injectable', 'Implant', 'IUD (coil)', 'Condoms', 'Natural / calendar method', 'Permanent method', 'Other'],
+    show: d => !is(d, 'menopausal', 'Yes') && !is(d, 'sexual_debut', 'Never had sex') },
+  { id: 'partners', group: 'Reproductive and sexual health', label: 'How many sexual partners in her lifetime?', type: 'chips', req: true,
+    opts: ['1–3', '4–10', '11–15', 'More than 15', 'Prefer not to say'], show: d => !is(d, 'sexual_debut', 'Never had sex') },
+  { id: 'orientation', group: 'Reproductive and sexual health', label: 'Sexual orientation', type: 'chips',
+    opts: ['Heterosexual (straight)', 'Lesbian or gay', 'Bisexual', 'Other', 'Prefer not to say'],
+    hint: 'Ask privately. Her answer is optional and kept confidential.' },
 
   // Health and medicines ------------------------------------------------
-  { id: 'hiv_status', group: 'Health and medicines', label: 'HIV status', type: 'chips', opts: ['Positive', 'Negative', 'Unknown', 'Declined'], req: true },
-  { id: 'hiv_last_test', group: 'Health and medicines', label: 'Last HIV test', type: 'chips', opts: ['Under 3 months ago', '3–12 months ago', 'Over 12 months ago', 'Never tested'], show: d => is(d, 'hiv_status', 'Negative', 'Unknown') },
-  { id: 'hiv_on_art', group: 'Health and medicines', label: 'On HIV treatment (ART)?', type: 'chips', opts: YN, show: d => is(d, 'hiv_status', 'Positive') },
-  { id: 'hiv_art_duration', group: 'Health and medicines', label: 'How long on treatment?', type: 'chips', opts: ['Under 6 months', '6–12 months', '1–5 years', 'Over 5 years'], show: d => is(d, 'hiv_on_art', 'Yes') },
-  { id: 'hiv_vl', group: 'Health and medicines', label: 'Latest viral load', type: 'chips', opts: ['Suppressed', 'Not suppressed', 'Unknown'], show: d => is(d, 'hiv_on_art', 'Yes') },
-  { id: 'tb', group: 'Health and medicines', label: 'Ever treated for TB?', type: 'chips',
-    opts: ['Never', 'On treatment now', 'Under 1 year ago', '1–5 years ago', 'Over 5 years ago', 'Unsure'] },
-  { id: 'chronic_meds', group: 'Health and medicines', label: 'Long-term medicines (3+ months)', type: 'multi', exclusive: [none],
+  { id: 'hiv_status', group: 'Health and medicines', label: 'Current HIV status', type: 'chips', req: true,
+    opts: [{ v: 'Positive', l: 'Positive (+ve)' }, { v: 'Negative', l: 'Negative (−ve)' }, 'Unknown', { v: 'Declined', l: 'Declined to say' }] },
+  { id: 'hiv_last_test', group: 'Health and medicines', label: 'How long since her last HIV test?', type: 'chips',
+    opts: ['Less than 3 months', '3–6 months', '7–12 months', 'More than 12 months', 'Never tested'], show: d => is(d, 'hiv_status', 'Negative', 'Unknown') },
+  { id: 'hiv_on_art', group: 'Health and medicines', label: 'Is she on HIV treatment (ART)?', type: 'chips', opts: YN, show: d => is(d, 'hiv_status', 'Positive') },
+  { id: 'hiv_art_duration', group: 'Health and medicines', label: 'How long has she been on treatment?', type: 'chips', opts: ['Under 6 months', '6–12 months', '1–5 years', 'Over 5 years'], show: d => is(d, 'hiv_on_art', 'Yes') },
+  { id: 'hiv_vl', group: 'Health and medicines', label: 'Latest viral load result', type: 'chips', opts: ['Suppressed', 'Not suppressed', 'Unknown'], show: d => is(d, 'hiv_on_art', 'Yes') },
+  { id: 'tb', group: 'Health and medicines', label: 'Has she ever been treated for TB?', type: 'chips',
+    opts: ['Never treated', 'On TB treatment now', 'Treated, finished under 1 year ago', 'Treated, finished 1–5 years ago', 'Treated, finished over 5 years ago', 'Not sure'] },
+  { id: 'chronic_meds', group: 'Health and medicines', label: 'Medicines she takes long term (3+ months)', type: 'multi', exclusive: [none],
     opts: [none, 'ARVs', 'TB drugs', 'Blood pressure', 'Diabetes', 'Steroids / immune-suppressing', 'Other'] },
   { id: 'substances', group: 'Health and medicines', label: 'Tobacco, alcohol or other drugs', type: 'multi', exclusive: [none, 'Declined'],
     opts: [none, 'Tobacco / smoking', 'Alcohol', 'Khat (miraa)', 'Other drugs', 'Declined'] },
-  { id: 'hpv_vax', group: 'Health and medicines', label: 'HPV vaccine received', type: 'chips', opts: ['None', '1 dose', '2 or more doses', 'Unknown'] },
-  { id: 'fam_hx', group: 'Health and medicines', label: 'Family history of cervical cancer?', type: 'chips', opts: ['Yes', 'No', 'Unknown'] },
+  { id: 'fam_hx', group: 'Health and medicines', label: 'Has a family member had cervical cancer?', type: 'chips', opts: ['Yes', 'No', 'Not sure'] },
   { id: 'symptoms', group: 'Health and medicines', label: 'Any of these symptoms?', type: 'multi', exclusive: [none],
     opts: [none, 'Bleeding after sex', 'Bleeding between periods', 'Bleeding after menopause', 'Abnormal discharge', 'Pelvic pain', 'Other'] },
 
-  // Screening history ---------------------------------------------------
-  { id: 'prev_screen', group: 'Screening history', label: 'Screened for cervical cancer before?', type: 'chips', opts: YN, req: true },
-  { id: 'prev_type', group: 'Screening history', label: 'Which test?', type: 'multi', opts: ['VIA / VILI', 'Pap smear', 'HPV DNA', 'E6/E7', 'Other', 'Do not remember'], show: d => is(d, 'prev_screen', 'Yes') },
-  { id: 'prev_when', group: 'Screening history', label: 'How long ago?', type: 'chips', opts: ['Under 1 year', '1–3 years', '3–5 years', 'Over 5 years'], show: d => is(d, 'prev_screen', 'Yes') },
-  { id: 'prev_result', group: 'Screening history', label: 'Result she was given', type: 'chips', opts: ['Normal', 'Abnormal', 'Not told / unknown'], show: d => is(d, 'prev_screen', 'Yes') },
-  { id: 'prev_reason', group: 'Screening history', label: 'Why not screened before?', type: 'multi',
+  // Pre-cervical cancer screening --------------------------------------
+  { id: 'hc_contact', group: 'Pre-cervical cancer screening', label: 'Does she have a relative or friend working in healthcare?', type: 'chips',
+    opts: ['Yes, a relative', 'Yes, a friend', 'Yes, both', 'No'] },
+  { id: 'aware_screening', group: 'Pre-cervical cancer screening', label: 'Does she know about cervical cancer screening?', type: 'chips', opts: ['Yes', 'A little', 'No'] },
+  { id: 'prev_screen', group: 'Pre-cervical cancer screening', label: 'Has she ever been screened for cervical cancer?', type: 'chips', opts: YN, req: true },
+  { id: 'prev_hpv', group: 'Pre-cervical cancer screening', label: 'Has she ever been screened for HPV?', type: 'chips', opts: ['Yes', 'No', 'Not sure'] },
+  { id: 'prev_type', group: 'Pre-cervical cancer screening', label: 'Which screening was done on her?', type: 'multi',
+    opts: ['VIA / VILI (visual check)', 'Pap smear', 'HPV DNA test', 'HPV E6/E7 test', 'Other', 'Not sure'], show: d => is(d, 'prev_screen', 'Yes') },
+  { id: 'prev_when', group: 'Pre-cervical cancer screening', label: 'When was it done?', type: 'chips', opts: ['Less than 2 years ago', '2 years ago', 'More than 2 years ago'], show: d => is(d, 'prev_screen', 'Yes') },
+  { id: 'prev_wait', group: 'Pre-cervical cancer screening', label: 'How long from screening to getting the result?', type: 'chips',
+    opts: ['Same day', '1–7 days', '1–4 weeks', 'More than 1 month', 'Never got the result', 'Do not remember'], show: d => is(d, 'prev_screen', 'Yes') },
+  { id: 'prev_how', group: 'Pre-cervical cancer screening', label: 'How was the result given to her?', type: 'multi',
+    opts: ['In person at the facility', 'Phone call', 'SMS', 'WhatsApp', 'Community health volunteer', 'Collected a letter or slip', 'Not given', 'Do not remember'], show: d => is(d, 'prev_screen', 'Yes') },
+  { id: 'prev_result', group: 'Pre-cervical cancer screening', label: 'What was the result?', type: 'chips', opts: ['Normal', 'Abnormal', 'Not told / not sure'], show: d => is(d, 'prev_screen', 'Yes') },
+  { id: 'prev_reason', group: 'Pre-cervical cancer screening', label: 'Why not screened before?', type: 'multi',
     opts: ['Did not know about it', 'Cost', 'Distance / transport', 'Fear or embarrassment', 'No symptoms', 'No time', 'Partner or family objection', 'Service not available', 'Other'],
     show: d => is(d, 'prev_screen', 'No') },
-  { id: 'prev_treat', group: 'Screening history', label: 'Earlier cervical treatment', type: 'chips', opts: ['None', 'Ablation / cryotherapy', 'LEEP / LLETZ', 'Cone biopsy', 'Other'] },
+  { id: 'prev_treat', group: 'Pre-cervical cancer screening', label: 'Any treatment for cervical changes before today?', type: 'chips', opts: ['None', 'Ablation / cryotherapy', 'LEEP / LLETZ', 'Cone biopsy', 'Other'] },
+  { id: 'hpv_vax', group: 'Pre-cervical cancer screening', label: 'Has she had the HPV vaccine?', type: 'chips', opts: ['Yes', 'No', 'Not sure'] },
+  { id: 'hpv_vax_type', group: 'Pre-cervical cancer screening', label: 'Which HPV vaccine did she receive?', type: 'chips',
+    opts: ['Gardasil (4-valent)', 'Gardasil 9 (9-valent)', 'Cervarix (2-valent)', 'Other vaccine', 'Not known'], show: d => is(d, 'hpv_vax', 'Yes') },
+  { id: 'hpv_doses', group: 'Pre-cervical cancer screening', label: 'How many doses?', type: 'chips', opts: ['1 dose', '2 doses', '3 doses', 'Not sure'], show: d => is(d, 'hpv_vax', 'Yes') },
 
   // Access and follow-up ------------------------------------------------
   { id: 'travel_time', group: 'Access and follow-up', label: 'Travel time to a health facility', type: 'chips', opts: ['Under 30 min', '30–60 min', '1–2 hours', 'Over 2 hours'] },
@@ -99,9 +131,9 @@ export const INTAKE = [
 const today = 'today';
 export const STAGES = {
   test: {
-    key: 'test', title: 'E6/E7 test', short: 'Test', section: 'D',
+    key: 'test', title: 'HPV E6/E7 test', short: 'Test', section: 'D',
     fields: [
-      { id: 'result', label: 'E6/E7 oncoprotein result', type: 'chips', opts: ['Positive', 'Negative', 'Invalid'], req: true },
+      { id: 'result', label: 'Results of HPV E6/E7', type: 'chips', opts: ['Positive', 'Negative', 'Invalid'], req: true },
       { id: 'specimen', label: 'Specimen', type: 'chips', opts: ['Clinician-collected cervical', 'Self-collected vaginal', 'Other'], def: 'Clinician-collected cervical' },
       { id: 'adequate', label: 'Sample adequate?', type: 'chips', opts: ['Adequate', 'Inadequate'] },
       { id: 'qc', label: 'Quality control', type: 'chips', opts: ['Passed', 'Failed', 'Not done'] },
@@ -242,7 +274,7 @@ export function dictionary() {
   const push = (section, prefix, f) => {
     const ids = f.type === 'hw' ? [['height_cm', 'Height', 'cm', 'number'], ['weight_kg', 'Weight', 'kg', 'number']] : f.type === 'contact' ? [] : [[f.id, f.label, f.unit || '', f.type]];
     for (const [id, label, unit, type] of ids)
-      rows.push([`${prefix}${id}`, section, label, type === 'chips' ? 'single choice' : type === 'multi' ? 'multiple choice' : type, f.opts ? f.opts.join(' | ') : (f.alts ? 'number or ' + f.alts.join(' | ') : ''), unit, f.req ? 'yes' : 'no']);
+      rows.push([`${prefix}${id}`, section, label, type === 'chips' ? 'single choice' : type === 'multi' ? 'multiple choice' : type, f.opts ? f.opts.map(o => (o && o.v) || o).join(' | ') : (f.alts ? 'number or ' + f.alts.join(' | ') : ''), unit, f.req ? 'yes' : 'no']);
   };
   rows.push(['pid', 'Identification', 'Unique participant ID (KCT-site-date-device+no.-check digit)', 'text', '', '', 'yes']);
   rows.push(['intake.bmi', 'Derived', 'Body mass index (kg/m²)', 'number', '', 'kg/m²', 'no']);
